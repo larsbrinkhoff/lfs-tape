@@ -18,11 +18,30 @@
 #include <string.h>
 #include "lmfs.h"
 
+#define TYPE_PRE  0
+#define TYPE_DIR  1
+#define TYPE_FIL  2
+
+static const char *type_name[] =
+  {
+    "Prelude",
+    "Directory",
+    "File"
+  };
+
 static char *buffer;
 
-static void read_info (void)
+static void read_info (int type)
 {
   char *p, *x;
+  int n;
+
+  if (verbose >= 3)
+    {
+      fprintf (stderr, "%s:", type_name[type]);
+      if (type == TYPE_PRE)
+        fputc ('\n', stderr);
+    }
 
   x = strchr (buffer, 0215);
   *x = 0;
@@ -30,15 +49,22 @@ static void read_info (void)
   if ((x = strchr (buffer, ' ')) != NULL)
     {
       *x = 0;
-      fprintf (stderr, "%s\n", x + 1);
+      if ((type == TYPE_FIL && verbose >= 1) || verbose >= 3)
+        n = fprintf (stderr, "%s", x + 1);
+      if ((type == TYPE_FIL && verbose != 2) || verbose >= 3)
+        fputc ('\n', stderr);
     }
   for (;;)
     {
       x = strchr (p, 0215);
       *x = 0;
-      //fprintf (stderr, " > %s\n", p);
       if (strncmp (p, "END", 3) == 0)
         break;
+      if (type == TYPE_FIL && strncmp (p, "CREATION-DATE", 13) == 0
+          && verbose == 2)
+        fprintf (stderr, " %*s\n", 75 - n, p + 14);
+      if (verbose >= 3)
+        fprintf (stderr, "  %s\n", p);
       p = x + 1;
     }
 }
@@ -54,24 +80,21 @@ static void read_eof (FILE *f)
 
 static void read_prelude (FILE *f, int n)
 {
-  //fprintf (stderr, "Prelude:\n");
-  read_info ();
+  read_info (TYPE_PRE);
   free (buffer);
   read_eof (f);
 }
 
 static void read_directory (FILE *f, int n)
 {
-  //fprintf (stderr, "Directory:\n");
-  read_info ();
+  read_info (TYPE_DIR);
   free (buffer);
   read_eof (f);
 }
 
 static void read_file (FILE *f, int n)
 {
-  //fprintf (stderr, "File:\n");
-  read_info ();
+  read_info (TYPE_FIL);
   free (buffer);
   read_eof (f);
 }
