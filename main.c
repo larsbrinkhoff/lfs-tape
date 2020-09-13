@@ -4,6 +4,7 @@
 #include "lmfs.h"
 
 int verbose = 0;
+int extract = 0;
 
 static void
 usage (const char *x)
@@ -18,7 +19,7 @@ main (int argc, char **argv)
   FILE *f = NULL;
   int opt;
 
-  while ((opt = getopt (argc, argv, "vt:")) != -1)
+  while ((opt = getopt (argc, argv, "vt:x:")) != -1)
     {
       switch (opt)
 	{
@@ -30,6 +31,12 @@ main (int argc, char **argv)
           if (f)
             usage (argv[0]);
           f = fopen (optarg, "rb");
+	  break;
+	case 'x':
+          if (f)
+            usage (argv[0]);
+          f = fopen (optarg, "rb");
+          extract = 1;
 	  break;
         default:
           usage (argv[0]);
